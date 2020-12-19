@@ -1,2 +1,3 @@
-# cf-logs-alert
-A  notification tool for cloud foundry applications 
+# CloudFoundry Application logs Alert
+
+A notification tool for cloud foundry applications 

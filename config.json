@@ -1,0 +1,14 @@
+{
+    "cf": {
+        "space":"test",
+        "cfuser": "username",
+        "cfpassword": "password",
+        "cfapiurl": "cf_api_url"
+    },
+    "email": {
+        "smtp_url": "localhost",
+        "smtp_port": "1025",
+        "sender_email": "kumbasar@localhost",
+        "receiver_email": "volkan@localhost"
+    }
+}
