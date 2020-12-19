@@ -3,6 +3,7 @@
 import argparse
 import json
 import smtplib
+import cf_api
 from email.message import EmailMessage
 
 DEFAULT_CONFIG = 'config.json'
@@ -13,7 +14,7 @@ parser.add_argument("-c", "--config", help="Set config file. Example: config.jso
 args = parser.parse_args()
 
 
-class LogEmail():
+class EmailAlert():
 
     subject = f'CF log alert'
 
@@ -34,6 +35,23 @@ class LogEmail():
             m.send_message(msg)
 
 
+class CFLOG():
+
+    deploy_client_id = 'cf'
+    deploy_client_secret = ''
+    verify_ssl = True
+
+    def __init__(self, json_cf, mail):
+        self.mail = mail
+
+        self.cc = cf_api.new_cloud_controller(
+            json_cf['cloud_controller'],
+            client_id=self.deploy_client_id,
+            client_secret=self.deploy_client_secret,
+            username=json_cf['cfuser'],
+            password=json_cf['cloud_controller']).set_verify_ssl(verify_ssl)
+
+
 try:
     with open(args.config, 'r') as json_file:
         config_json = json.load(json_file)
@@ -41,5 +59,7 @@ except (FileNotFoundError, IOError, json.decoder.JSONDecodeError):
     print("Wrong config file or path. ")
 
 
-le = LogEmail(config_json['email'])
-le.send_email('test')
+ea = EmailAlert(config_json['email'])
+ea.send_email('test')
+
+cf = CFLOG(config_json['cf'], ea)

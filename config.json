@@ -3,7 +3,7 @@
         "space":"test",
         "cfuser": "username",
         "cfpassword": "password",
-        "cfapiurl": "cf_api_url"
+        "cloud_controller": "https://api.yourcloudfoundry.com"
     },
     "email": {
         "smtp_url": "localhost",
