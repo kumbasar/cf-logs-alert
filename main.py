@@ -20,7 +20,7 @@ def streamer(app, conf):
         print("[{}] {}".format(name, log))
         for key in conf['keys']:
             if key in str(log):
-                print("[{}] Found key: {}".format(name, key))
+                print("[{}] Found key: {}!!".format(name, key))
 
                 body = "Org/space: {}/{}\n".format(conf['cf']['org'], conf['cf']['space'])
                 body = "{}App: {}\n".format(body, name)
