@@ -1,14 +1,16 @@
 {
     "cf": {
-        "space":"test",
-        "cfuser": "username",
-        "cfpassword": "password",
-        "cloud_controller": "https://api.yourcloudfoundry.com"
+        "space":"dev",
+        "org":"welcome",
+        "user": "welcome",
+        "password": "welcome",
+        "api": "https://api.cap.explore.suse.dev"
     },
     "email": {
         "smtp_url": "localhost",
         "smtp_port": "1025",
         "sender_email": "kumbasar@localhost",
         "receiver_email": "volkan@localhost"
-    }
+    },
+    "keywords": ["Error", "Exceptions"]
 }
