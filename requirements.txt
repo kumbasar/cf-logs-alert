@@ -1,2 +1,2 @@
 argparse
-cf-api
+cloudfoundry_client

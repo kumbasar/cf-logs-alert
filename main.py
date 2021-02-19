@@ -3,8 +3,10 @@
 import argparse
 import json
 import smtplib
-import cf_api
+import os
+from cloudfoundry_client.client import CloudFoundryClient
 from email.message import EmailMessage
+
 
 DEFAULT_CONFIG = 'config.json'
 
@@ -35,31 +37,34 @@ class EmailAlert():
             m.send_message(msg)
 
 
-class CFLOG():
+class cflog():
 
     deploy_client_id = 'cf'
     deploy_client_secret = ''
     verify_ssl = True
 
-    def __init__(self, json_cf, mail):
+    def __init__(self, cred, mail):
         self.mail = mail
 
-        self.cc = cf_api.new_cloud_controller(
-            json_cf['cloud_controller'],
-            client_id=self.deploy_client_id,
-            client_secret=self.deploy_client_secret,
-            username=json_cf['cfuser'],
-            password=json_cf['cloud_controller']).set_verify_ssl(verify_ssl)
+        print(cred)
+
+        proxy = dict(http=os.environ.get('HTTP_PROXY', ''), https=os.environ.get('HTTPS_PROXY', ''))
+
+        client = CloudFoundryClient(cred['cloud_controller'], proxy=proxy, verify=True)
+
+        client.init_with_user_credentials(cred['cfuser'], cred['cfpassword'])
+
+        for organization in client.v2.organizations:
+            print(organization['metadata']['guid'])
 
 
-try:
-    with open(args.config, 'r') as json_file:
-        config_json = json.load(json_file)
-except (FileNotFoundError, IOError, json.decoder.JSONDecodeError):
-    print("Wrong config file or path. ")
+if __name__ == "__main__":
+    try:
+        with open(args.config, 'r') as json_file:
+            config_json = json.load(json_file)
+    except (FileNotFoundError, IOError, json.decoder.JSONDecodeError):
+        print("Wrong config file or path. ")
 
+    ea = EmailAlert(config_json['email'])
 
-ea = EmailAlert(config_json['email'])
-ea.send_email('test')
-
-cf = CFLOG(config_json['cf'], ea)
+    cf = cflog(config_json['cf'], ea)
