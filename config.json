@@ -3,14 +3,14 @@
         "space":"dev",
         "org":"welcome",
         "user": "welcome",
-        "password": "welcome",
+        "password": "",
         "api": "https://api.cap.explore.suse.dev"
     },
     "email": {
-        "smtp_url": "localhost",
-        "smtp_port": "1025",
+        "smtp": "localhost",
+        "port": "1025",
         "sender_email": "kumbasar@localhost",
         "receiver_email": "volkan@localhost"
     },
-    "keywords": ["Error", "Exceptions"]
+    "keys": ["Error", "Exceptions", "ContainerMetric"]
 }

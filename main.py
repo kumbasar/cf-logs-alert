@@ -2,72 +2,108 @@
 
 import argparse
 import json
-import smtplib
+import cfmail
 import os
+from threading import Thread
+
 from cloudfoundry_client.client import CloudFoundryClient
-from email.message import EmailMessage
 
 
-DEFAULT_CONFIG = 'config.json'
+def streamer(app, conf):
+    """ app log streams """
 
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-c", "--config", help="config file. Example: config.json", type=str, default=DEFAULT_CONFIG)
+    name = app['entity']['name']
 
-args = parser.parse_args()
+    print("[{}] Starting log check.".format(name))
 
+    for log in app.stream_logs():
+        print("[{}] {}".format(name, log))
+        for key in conf['keys']:
+            if key in str(log):
+                print("[{}] Found key: {}".format(name, key))
 
-class alert():
-
-    subject = f'CF log alert'
-
-    def __init__(self, json_email):
-        self.smtp_url = json_email['smtp_url']
-        self.smtp_port = json_email['smtp_port']
-        self.sender_email = json_email['sender_email']
-        self.receiver_email = json_email['receiver_email']
-
-    def send_email(self, message):
-        msg = EmailMessage()
-        msg.set_content(message)
-        msg['Subject'] = self.subject
-        msg['From'] = self.sender_email
-        msg['To'] = self.receiver_email
-
-        with smtplib.SMTP(self.smtp_url, self.smtp_port) as m:
-            m.send_message(msg)
+                body = "Org/space: {}/{}\n".format(conf['cf']['org'], conf['cf']['space'])
+                body = "{}App: {}\n".format(body, name)
+                body = "{}Key: {}\n".format(body, key)
+                body = "{}Log: {}\n".format(body, log)
+                
+                cfmail.mail(body, conf['email'])
 
 
-class cflog():
+def get_args():
+    """ Get args"""
 
-    def __init__(self, cred, mail, proxy):
+    default_config = 'config.json'
+    default_proxy = ''
 
-        client = CloudFoundryClient(cred['api'], proxy=proxy)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-        client.init_with_user_credentials(cred['user'], cred['password'])
+    parser.add_argument("-c", "--config", help="config file. Example: config.json", type=str, default=default_config)
+    parser.add_argument("-p", "--proxy", help="HTTPS proxy.", type=str, default=default_proxy)
 
-        org = client.v2.organizations.get_first(**{'name': cred['org']})
-        org_guid = org['metadata']['guid']
+    return parser.parse_args()
 
-        space = client.v2.spaces.get_first(**{'name': cred['space']})
-        space_guid = space['metadata']['guid']
 
-        for app in client.v2.apps.list(space_guid=space_guid):
-            for log in app.recent_logs():
-                print(log)
+def get_config(config):
+    """ parse config file """
+    try:
+        with open(config, 'r') as json_file:
+            return json.load(json_file)
+    except (FileNotFoundError, IOError, json.decoder.JSONDecodeError):
+        print("Wrong config filename or path.")
+
+
+def get_proxy(proxy):
+    """ proxy setup """
+    if proxy == '':
+        http_proxy = os.environ.get('HTTP_PROXY', '')
+        https_proxy = os.environ.get('HTTPS_PROXY', '')
+    else:
+        http_proxy = proxy
+        https_proxy = proxy
+
+    return dict(http=http_proxy, https=https_proxy)
+
+
+def cf_login(cf, proxy):
+    """ cf login """
+    client = CloudFoundryClient(cf['api'], proxy=proxy)
+    client.init_with_user_credentials(cf['user'], cf['password'])
+
+    return client
+
+
+def get_space_guid(name):
+    """ Get space guid """
+    space = client.v2.spaces.get_first(**{'name': name})
+
+    return space['metadata']['guid']
+
+
+def get_org_guid(name):
+    """ Get org guid """
+    org = client.v2.organizations.get_first(**{'name': name})
+
+    return org['metadata']['guid']
 
 
 if __name__ == "__main__":
 
-    try:
-        with open(args.config, 'r') as json_file:
-            config_json = json.load(json_file)
-    except (FileNotFoundError, IOError, json.decoder.JSONDecodeError):
-        print("Wrong config filename or path.")
+    args = get_args()
 
-    ea = alert(config_json['email'])
+    config_json = get_config(args.config)
 
-    http_proxy = os.environ.get('HTTP_PROXY', '')
-    https_proxy = os.environ.get('HTTPS_PROXY', '')
+    proxy = get_proxy(args.proxy)
+    client = cf_login(config_json['cf'], proxy)
 
-    proxy = dict(http=http_proxy, https=https_proxy)
-    cf = cflog(config_json['cf'], ea, proxy)
+    org_guid = get_org_guid(config_json['cf']['org'])
+    space_guid = get_space_guid(config_json['cf']['space'])
+
+    threads = []
+    for app in client.v2.apps.list(space_guid=space_guid):
+        t = Thread(target=streamer, args=(app, config_json,))
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
