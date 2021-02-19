@@ -23,9 +23,7 @@ def streamer(app, conf):
                 print("[{}] Found key: {}!!".format(name, key))
 
                 body = "Org/space: {}/{}\n".format(conf['cf']['org'], conf['cf']['space'])
-                body = "{}App: {}\n".format(body, name)
-                body = "{}Key: {}\n".format(body, key)
-                body = "{}Log: {}\n".format(body, log)
+                body = "{}App: {}\nKey: {}\nLog: {}\n".format(body, name, key, log)
                 
                 cfmail.mail(body, conf['email'])
 
