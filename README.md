@@ -5,9 +5,30 @@
 
 A notification tool for cloud foundry applications 
 
-## Start Local email server
+## Start local test email server
 
 ```bash
 python -m smtpd -c DebuggingServer -n localhost:1025
 ```
 
+## Build and run Docker container
+
+```bash
+docker build -t cf-logger . 
+docker run -t cf-logger   
+```
+
+## Proxy
+
+```bash
+export HTTPS_PROXY=<HTTPS_PROXY>
+export HTTP_PROXY=<HTTP_PROXY>
+
+./main.py
+```
+
+Or
+
+```bash
+HTTPS_PROXY=<HTTPS_PROXY> ./main.py
+```

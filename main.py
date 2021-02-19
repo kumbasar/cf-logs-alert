@@ -11,12 +11,12 @@ from email.message import EmailMessage
 DEFAULT_CONFIG = 'config.json'
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-c", "--config", help="Set config file. Example: config.json", type=str, default=DEFAULT_CONFIG)
+parser.add_argument("-c", "--config", help="config file. Example: config.json", type=str, default=DEFAULT_CONFIG)
 
 args = parser.parse_args()
 
 
-class EmailAlert():
+class alert():
 
     subject = f'CF log alert'
 
@@ -39,32 +39,35 @@ class EmailAlert():
 
 class cflog():
 
-    deploy_client_id = 'cf'
-    deploy_client_secret = ''
-    verify_ssl = True
+    def __init__(self, cred, mail, proxy):
 
-    def __init__(self, cred, mail):
-        self.mail = mail
+        client = CloudFoundryClient(cred['api'], proxy=proxy)
 
-        print(cred)
+        client.init_with_user_credentials(cred['user'], cred['password'])
 
-        proxy = dict(http=os.environ.get('HTTP_PROXY', ''), https=os.environ.get('HTTPS_PROXY', ''))
+        org = client.v2.organizations.get_first(**{'name': cred['org']})
+        org_guid = org['metadata']['guid']
 
-        client = CloudFoundryClient(cred['cloud_controller'], proxy=proxy, verify=True)
+        space = client.v2.spaces.get_first(**{'name': cred['space']})
+        space_guid = space['metadata']['guid']
 
-        client.init_with_user_credentials(cred['cfuser'], cred['cfpassword'])
-
-        for organization in client.v2.organizations:
-            print(organization['metadata']['guid'])
+        for app in client.v2.apps.list(space_guid=space_guid):
+            for log in app.recent_logs():
+                print(log)
 
 
 if __name__ == "__main__":
+
     try:
         with open(args.config, 'r') as json_file:
             config_json = json.load(json_file)
     except (FileNotFoundError, IOError, json.decoder.JSONDecodeError):
-        print("Wrong config file or path. ")
+        print("Wrong config filename or path.")
 
-    ea = EmailAlert(config_json['email'])
+    ea = alert(config_json['email'])
 
-    cf = cflog(config_json['cf'], ea)
+    http_proxy = os.environ.get('HTTP_PROXY', '')
+    https_proxy = os.environ.get('HTTPS_PROXY', '')
+
+    proxy = dict(http=http_proxy, https=https_proxy)
+    cf = cflog(config_json['cf'], ea, proxy)
