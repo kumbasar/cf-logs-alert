@@ -19,12 +19,12 @@ def streamer(app, conf):
     for log in app.stream_logs():
         print("[{}] {}".format(name, log))
         for key in conf['keys']:
-            if key in str(log):
+            if key.lower() in str(log).lower():
                 print("[{}] Found key: {}!!".format(name, key))
 
                 body = "Org/space: {}/{}\n".format(conf['cf']['org'], conf['cf']['space'])
                 body = "{}App: {}\nKey: {}\nLog: {}\n".format(body, name, key, log)
-                
+
                 cfmail.mail(body, conf['email'])
 
 
