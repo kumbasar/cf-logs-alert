@@ -4,8 +4,8 @@ import argparse
 import json
 import cfmail
 import os
-from threading import Thread
 
+from threading import Thread
 from cloudfoundry_client.client import CloudFoundryClient
 
 
