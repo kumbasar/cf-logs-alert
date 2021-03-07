@@ -7,10 +7,10 @@
         "api": "https://api.cap.explore.suse.dev"
     },
     "email": {
-        "smtp": "localhost",
+        "smtp": "mailserver",
         "port": "1025",
         "sender_email": "kumbasar@localhost",
         "receiver_email": "volkan@localhost"
     },
-    "keys": ["Error", "Exceptions", "ContainerMetric"]
+    "keys": ["error", "exceptions"]
 }

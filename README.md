@@ -1,17 +1,44 @@
-# CloudFoundry Application logs Alert
+# Cloud Foundry Application logs Alert
+
+An email notification tool for Cloud Foundry applications. 
 
 [![Codeship Status for kumbasar/cf-logs-alert](https://app.codeship.com/projects/3112835d-71ee-43c3-8a6d-7cdc27e3946e/status?branch=main)](https://app.codeship.com/projects/422129)
 ![cf-logs-alert](https://github.com/kumbasar/cf-logs-alert/workflows/cf-logs-alert/badge.svg)
 
-A notification tool for cloud foundry applications 
 
-## Start local test email server
+## Usage
+
+This tool posts email alerts for given a keyword list. To use the tool, first update the `config.json` file, according to your setup:
+
+Parameter | Info | 
+------ | ------|
+`space`|  CF space value
+`org`|  CF org value
+`user`|  CF username
+`password`|  CF password
+`api`|  CF target URL
+`smtp`| SMTP IP address or hostname
+`port`|  SMTP port #
+`sender_email`|  Email poster
+`receiver_email`|  Receiver list
+`keys`| Notifaction keyword list
+
+Now, you can execute the below command to start the tool:
 
 ```bash
-python -m smtpd -c DebuggingServer -n localhost:1025
+chmod +x main.py
+./main.py 
 ```
 
-## Docker container build and run
+or
+
+```bash
+python main.py 
+```
+
+Also, you might build and run the tool in a Docker container. See provided `Dockerfile` as an example.
+
+To build and run the tool via docker:
 
 ```bash
 docker build -t cf-logger . 
@@ -19,6 +46,8 @@ docker run -t cf-logger
 ```
 
 ## Proxy Configuration
+
+You can set your proxy as follows:
 
 ```bash
 export HTTPS_PROXY=<HTTPS_PROXY>
@@ -33,39 +62,39 @@ or
 ./main.py --proxy <HTTPS_PROXY>
 ```
 
-## Test
+##  Optional: Local email server for testing
 
-**Startup**
+Update `config.json` file as follows:
 
-```bash
-docker-compose -up --build
+```JSON
+[...]
+"email": {
+    "smtp": "localhost",
+    "port": "1025",
+    "sender_email": "test@localhost",
+    "receiver_email": "test@localhost"
+}
+[...]
 ```
 
-Example output:
+Execute the test email as follows:
 
 ```bash
-mailserver_1  | ---------- MESSAGE FOLLOWS ----------
-mailserver_1  | b'Content-Type: text/plain; charset="utf-8"'
-mailserver_1  | b'Content-Transfer-Encoding: 7bit'
-mailserver_1  | b'MIME-Version: 1.0'
-mailserver_1  | b'Subject: CF log alert'
-mailserver_1  | b'From: kumbasar@localhost'
-mailserver_1  | b'To: volkan@localhost'
-mailserver_1  | b'X-Peer: 172.21.0.3'
-mailserver_1  | b''
-mailserver_1  | b'Org/space: welcome/dev'
-mailserver_1  | b'App: roster'
-mailserver_1  | b'Key: error'
-mailserver_1  | b'Log: origin: "rep"'
-mailserver_1  | b'eventType: ContainerMetric'
-mailserver_1  | b'timestamp: 1613823966400034322'
-mailserver_1  | b'containerMetric {'
-mailserver_1  | b'  applicationId: "85d139e7-9fb3-4041-b80a-5970f624a415"'
-mailserver_1  | b'  instanceIndex: 0'
+python -m smtpd -c DebuggingServer -n localhost:1025
 ```
 
-**Shutdown**
+Also, you can use `docker compose`:
+
+In `config.json`, set `smtp` to `mailserver`. Example:
+
+```JSON
+[...]
+    "smtp": "mailserver",
+[...]
+```
+
+Execute below command:
 
 ```bash
-docker-compose -down
+docker-compose up --build
 ```
